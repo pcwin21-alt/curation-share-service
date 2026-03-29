@@ -54,6 +54,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false)
+      return
+    }
+
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u)
       if (u) {
@@ -67,11 +72,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   async function signInWithGoogle() {
+    if (!auth) throw new Error('Firebase 인증 설정이 아직 준비되지 않았습니다.')
+
     const provider = new GoogleAuthProvider()
     await signInWithPopup(auth, provider)
   }
 
   async function signOut() {
+    if (!auth) return
     await firebaseSignOut(auth)
   }
 

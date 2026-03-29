@@ -18,6 +18,10 @@ export async function apiFetch(input: RequestInfo | URL, init: ApiFetchOptions =
   const nextHeaders = new Headers(headers ?? {})
 
   if (requireAuth) {
+    if (!auth) {
+      throw new ApiAuthError('Firebase 인증 설정이 아직 준비되지 않았습니다.')
+    }
+
     const user = auth.currentUser
 
     if (!user) {
