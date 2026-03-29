@@ -1,0 +1,79 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #f0ede8;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+.font-headline {
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.type-hero {
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+  font-size: clamp(2rem, 1.6rem + 1vw, 2.5rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+.type-section {
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+  font-size: clamp(1.5rem, 1.3rem + 0.45vw, 1.875rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+.type-subtitle {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  letter-spacing: -0.012em;
+}
+
+.type-body {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  letter-spacing: -0.012em;
+}
+
+.type-micro {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.type-nav {
+  font-size: 0.78rem;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+}
+
+@keyframes shimmer-move {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  background-size: 200% 100%;
+  animation: shimmer-move 2s infinite linear;
+}
+
+@keyframes subtle-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 0.4; }
+}
+
+.pulse-ring {
+  animation: subtle-pulse 3s ease-in-out infinite;
+}
