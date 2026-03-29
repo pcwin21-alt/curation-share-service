@@ -49,7 +49,18 @@
 
 ## 4. Vercel 배포
 
-1. Git 저장소를 Vercel에 연결합니다.
+1. GitHub에 빈 저장소를 만듭니다.
+   권장값:
+   - owner: `pcwin21-alt`
+   - repository name: `curatio`
+   - branch: `main`
+2. 로컬에서 아래 명령으로 첫 push를 올립니다.
+
+```bash
+git push -u origin main
+```
+
+3. Vercel에서 방금 만든 Git 저장소를 연결합니다.
 2. Project Settings > Environment Variables에 `.env.example` 기준 값을 등록합니다.
 3. 배포 후 실제 도메인을 Firebase Authorized domains에 다시 등록합니다.
 4. 첫 배포 후 공개 링크, 로그인, 카드 저장, 폴더 내보내기까지 확인합니다.
