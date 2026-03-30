@@ -174,7 +174,6 @@ export async function POST(req: NextRequest) {
     name: trimmedName,
     description: String(description ?? ''),
     isPublic: Boolean(isPublic),
-    shareSlug: isPublic ? normalizedShareSlug : undefined,
     ownerUid: user.uid,
     ownerName: getUserDisplayName(user),
     cardIds: [],
@@ -191,7 +190,12 @@ export async function POST(req: NextRequest) {
     emailSubscriberCount: 0,
     createdAt: now,
     updatedAt: now,
-    sharedAt: isPublic ? now : undefined,
+    ...(isPublic
+      ? {
+          shareSlug: normalizedShareSlug,
+          sharedAt: now,
+        }
+      : {}),
   }
 
   await setDoc(doc(db, 'folders', id), folder)

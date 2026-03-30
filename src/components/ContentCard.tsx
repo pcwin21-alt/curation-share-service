@@ -545,13 +545,15 @@ export default function ContentCard({
   return (
     <>
       <article
+        draggable={!readOnly}
+        onDragStart={readOnly ? undefined : handleDragStart}
         className={`group overflow-hidden rounded-xl border bg-surface-container-lowest ${
           highlight
             ? 'ring-2 ring-secondary/40'
             : isUnassigned
               ? 'border-[#E2B24D] shadow-[0_0_0_1px_rgba(226,178,77,0.18)]'
               : 'border-outline-variant/10'
-        }`}
+        } ${readOnly ? '' : 'cursor-grab active:cursor-grabbing'}`}
       >
         {card.thumbnailUrl ? (
           <button

@@ -116,6 +116,21 @@ export default function FolderSidebar({
     e.dataTransfer.dropEffect = 'move'
   }
 
+  function handleDragEnter(folderId: string) {
+    setDragOverId(folderId)
+  }
+
+  function handleDragLeave(e: React.DragEvent, folderId: string) {
+    const nextTarget = e.relatedTarget
+    if (nextTarget instanceof Node && e.currentTarget.contains(nextTarget)) {
+      return
+    }
+
+    if (dragOverId === folderId) {
+      setDragOverId(null)
+    }
+  }
+
   function handleDrop(e: React.DragEvent, folderId: string) {
     e.preventDefault()
     setDragOverId(null)
@@ -167,8 +182,8 @@ export default function FolderSidebar({
               <div
                 key={folder.id}
                 onDragOver={handleDragOver}
-                onDragEnter={() => setDragOverId(folder.id)}
-                onDragLeave={() => setDragOverId(null)}
+                onDragEnter={() => handleDragEnter(folder.id)}
+                onDragLeave={(e) => handleDragLeave(e, folder.id)}
                 onDrop={(e) => handleDrop(e, folder.id)}
                 className={`rounded-2xl border-2 border-dashed px-4 py-4 transition-all ${
                   dragOverId === folder.id
@@ -198,8 +213,14 @@ export default function FolderSidebar({
           return (
             <div key={folder.id} className="group relative">
               <div
+                onDragOver={handleDragOver}
+                onDragEnter={() => handleDragEnter(folder.id)}
+                onDragLeave={(e) => handleDragLeave(e, folder.id)}
+                onDrop={(e) => handleDrop(e, folder.id)}
                 className={`rounded-2xl border px-3 py-3 transition-colors ${
-                  isSelected
+                  dragOverId === folder.id
+                    ? 'border-secondary bg-secondary-container/55'
+                    : isSelected
                     ? 'border-outline bg-surface-container-lowest'
                     : 'border-transparent hover:bg-surface-container/50'
                 }`}

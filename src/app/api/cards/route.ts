@@ -86,8 +86,6 @@ export async function POST(req: NextRequest) {
 
   const initialCard: ContentCard = {
     id,
-    url: isUrl ? url : undefined,
-    rawText: isText ? rawText : undefined,
     platform,
     ownerUid: user.uid,
     ownerName: getUserDisplayName(user),
@@ -96,7 +94,6 @@ export async function POST(req: NextRequest) {
     keyInsight: '',
     contextMemo: '',
     tags: [],
-    thumbnailUrl: undefined,
     folderIds: [],
     status: 'saving',
     createdAt: now,
@@ -104,6 +101,8 @@ export async function POST(req: NextRequest) {
     analysisError: '',
     analysisWarnings: [],
     analysisVersion: ANALYSIS_VERSION,
+    ...(isUrl ? { url } : {}),
+    ...(isText ? { rawText } : {}),
   }
 
   await setDoc(doc(db, 'cards', id), initialCard)
