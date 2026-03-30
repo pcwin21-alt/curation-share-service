@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "curatio saver",
+  "description": "웹서핑 중 본 링크를 curatio 컬렉션에 바로 저장합니다.",
+  "version": "0.1.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "curatio에 저장"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["storage", "tabs", "activeTab", "contextMenus", "offscreen", "notifications"],
+  "host_permissions": [
+    "__APP_ORIGIN__/*",
+    "https://apis.google.com/*",
+    "https://www.gstatic.com/*",
+    "https://www.googleapis.com/*",
+    "https://securetoken.googleapis.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["offscreen.html"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; frame-src __APP_ORIGIN__ https://apis.google.com https://www.gstatic.com; connect-src 'self' __APP_ORIGIN__ https://www.googleapis.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com https://apis.google.com https://www.gstatic.com;"
+  }
+}

@@ -28,6 +28,24 @@ function toSlug(name: string) {
   return normalizeShareSlug(name)
 }
 
+function trimLine(value: string, maxLength = 120) {
+  return value.replace(/\s+/g, ' ').trim().slice(0, maxLength)
+}
+
+function buildDigestOverview(folder: CurationFolder, card: ContentCard, totalAddedCount: number) {
+  const focus = trimLine(card.keyInsight || card.summary?.[0] || card.title, 120)
+  return `${folder.name} 컬렉션에 이번 주 ${totalAddedCount}개의 업데이트가 쌓였습니다. 대표 흐름은 "${focus}" 쪽에 가깝습니다.`
+}
+
+function buildDigestBullets(eventTitles: string[], card: ContentCard) {
+  const bullets = [
+    card.keyInsight || card.summary?.[0] || '',
+    ...eventTitles.slice(0, 2),
+  ]
+
+  return [...new Set(bullets.map((item) => trimLine(item, 110)).filter(Boolean))].slice(0, 3)
+}
+
 async function requireUser(req: NextRequest) {
   const token = readBearerToken(req.headers.get('authorization'))
   return verifyFirebaseIdToken(token)
@@ -87,6 +105,8 @@ async function createCollectionUpdateArtifacts(folder: CurationFolder, card: Con
 
   const nextCardIds = [...new Set([...(previousEvent?.addedCardIds ?? []), card.id])]
   const nextCardTitles = [...new Set([...(previousEvent?.addedCardTitles ?? []), card.title])].slice(0, 12)
+  const digestOverview = buildDigestOverview(folder, card, nextCardIds.length)
+  const digestBullets = buildDigestBullets(nextCardTitles, card)
 
   const nextEvent: CollectionUpdateEvent = {
     id: eventId,
@@ -101,6 +121,9 @@ async function createCollectionUpdateArtifacts(folder: CurationFolder, card: Con
     createdAt: previousEvent?.createdAt ?? now,
     updatedAt: now,
     lastCardAddedAt: now,
+    digestOverview,
+    digestBullets,
+    lastSummaryAt: now,
     digestStatus: previousEvent?.digestStatus ?? 'pending',
     digestQueuedAt: previousEvent?.digestQueuedAt ?? null,
     digestSentAt: previousEvent?.digestSentAt ?? null,
@@ -135,6 +158,21 @@ async function createCollectionUpdateArtifacts(folder: CurationFolder, card: Con
       await setDoc(doc(db, 'users', uid, 'notifications', eventId), notification, { merge: true })
     }),
   )
+}
+
+export async function GET(req: NextRequest) {
+  const user = await requireUser(req)
+
+  if (!user) {
+    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+  }
+
+  const snapshot = await getDocs(query(collection(db, 'folders'), where('ownerUid', '==', user.uid)))
+  const folders = snapshot.docs
+    .map((item) => item.data() as CurationFolder)
+    .sort((a, b) => a.createdAt - b.createdAt)
+
+  return NextResponse.json({ folders })
 }
 
 export async function POST(req: NextRequest) {

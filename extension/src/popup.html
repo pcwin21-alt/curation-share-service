@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>curatio saver</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="header">
+        <div>
+          <p class="eyebrow">CURATIO SAVER</p>
+          <h1>지금 보는 링크 저장</h1>
+        </div>
+        <button id="refreshButton" class="icon-button" type="button" aria-label="새로고침">↻</button>
+      </header>
+
+      <section class="panel">
+        <div id="sessionBox" class="session-box">
+          <p id="sessionStatus" class="muted">로그인 상태를 확인하는 중...</p>
+          <div class="row">
+            <button id="signInButton" class="primary-button" type="button">Google 로그인</button>
+            <button id="signOutButton" class="ghost-button" type="button" hidden>로그아웃</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <label class="label" for="titleInput">제목</label>
+        <input id="titleInput" class="field" type="text" placeholder="현재 탭 제목" />
+
+        <label class="label" for="urlInput">링크</label>
+        <input id="urlInput" class="field" type="url" placeholder="https://..." />
+
+        <label class="label" for="folderSelect">저장 위치</label>
+        <select id="folderSelect" class="field">
+          <option value="">전체 컬렉션</option>
+        </select>
+
+        <label class="label" for="noteInput">짧은 메모</label>
+        <textarea id="noteInput" class="field textarea" rows="4" placeholder="왜 저장하는지 짧게 적어둘 수 있어요."></textarea>
+
+        <div class="row">
+          <button id="saveButton" class="primary-button" type="button">curatio에 저장</button>
+        </div>
+
+        <p id="message" class="message"></p>
+      </section>
+    </main>
+
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>

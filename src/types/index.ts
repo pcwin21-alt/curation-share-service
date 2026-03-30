@@ -77,7 +77,20 @@ export interface CollectionSummaryTakeaway {
   sources: string[]
 }
 
+export type SummaryMode = 'all' | 'selected'
+
+export type SummaryType = 'collection' | 'persona'
+
+export type PersonaPresetId = 'toegye' | 'yulgok' | 'karpathy' | 'drucker'
+
+export interface SummaryResultBase {
+  summaryType: SummaryType
+  sourceCount: number
+  usedFallback?: boolean
+}
+
 export interface CollectionSummaryResult {
+  summaryType: 'collection'
   overview: string
   keyTakeaways: CollectionSummaryTakeaway[]
   sectionSummary: string
@@ -87,6 +100,23 @@ export interface CollectionSummaryResult {
   sourceCount: number
   usedFallback?: boolean
 }
+
+export interface PersonaSummaryResult {
+  summaryType: 'persona'
+  personaPresetId: PersonaPresetId
+  personaLabel: string
+  personaDescription: string
+  lensSummary: string
+  strengths: string[]
+  cautions: string[]
+  reframingCriteria: string[]
+  suggestedQuestions: string[]
+  sourceSpotlights: CollectionSummaryReference[]
+  sourceCount: number
+  usedFallback?: boolean
+}
+
+export type CollectionSummaryResponse = CollectionSummaryResult | PersonaSummaryResult
 
 export type EmailSubscriberStatus = 'pending' | 'confirmed' | 'unsubscribed'
 
@@ -146,6 +176,9 @@ export interface CollectionUpdateEvent {
   createdAt: number
   updatedAt: number
   lastCardAddedAt: number
+  digestOverview?: string
+  digestBullets?: string[]
+  lastSummaryAt?: number | null
   digestStatus?: 'pending' | 'queued' | 'sent'
   digestQueuedAt?: number | null
   digestSentAt?: number | null

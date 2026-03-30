@@ -1,0 +1,145 @@
+:root {
+  color-scheme: light;
+  --bg: #f5efe6;
+  --surface: #fffdf8;
+  --surface-soft: #f2ece2;
+  --line: rgba(52, 70, 59, 0.12);
+  --text: #171412;
+  --muted: #5d5a57;
+  --primary: #1f1a17;
+  --secondary: #2f6f52;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 360px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+}
+
+.shell {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--secondary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.08;
+}
+
+.panel {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.session-box {
+  display: grid;
+  gap: 10px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.field {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: var(--surface-soft);
+  color: var(--text);
+  outline: none;
+}
+
+.field:focus {
+  border-color: rgba(47, 111, 82, 0.35);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 92px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.primary-button,
+.ghost-button,
+.icon-button {
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.primary-button {
+  padding: 11px 16px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.ghost-button {
+  padding: 11px 16px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.icon-button {
+  width: 38px;
+  height: 38px;
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.muted {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.message {
+  min-height: 18px;
+  margin: 0;
+  color: var(--secondary);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.message.error {
+  color: #b7483f;
+}

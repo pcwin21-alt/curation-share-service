@@ -18,10 +18,11 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { url, rawText } = body
+  const url = typeof body.url === 'string' ? body.url.trim() : ''
+  const rawText = typeof body.rawText === 'string' ? body.rawText.trim() : ''
 
   const isUrl = Boolean(url && isValidUrl(url))
-  const isText = !isUrl && Boolean(rawText && rawText.trim().length > 10)
+  const isText = !isUrl && rawText.length > 10
 
   if (!isUrl && !isText) {
     return NextResponse.json(
@@ -32,11 +33,7 @@ export async function POST(req: NextRequest) {
 
   if (isUrl) {
     const duplicateSnapshot = await getDocs(
-      query(
-        collection(db, 'cards'),
-        where('ownerUid', '==', user.uid),
-        where('url', '==', url),
-      ),
+      query(collection(db, 'cards'), where('ownerUid', '==', user.uid), where('url', '==', url)),
     )
 
     if (!duplicateSnapshot.empty) {
@@ -45,7 +42,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: '이미 저장한 링크입니다.',
-          duplicate: { title: duplicate.title, createdAt: duplicate.createdAt },
+          duplicate: {
+            id: duplicate.id,
+            title: duplicate.title,
+            createdAt: duplicate.createdAt,
+            folderIds: duplicate.folderIds ?? [],
+          },
         },
         { status: 409 },
       )
@@ -53,13 +55,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (isText) {
-    const prefix = rawText.trim().slice(0, 100)
+    const prefix = rawText.slice(0, 100)
     const textSnapshot = await getDocs(
-      query(
-        collection(db, 'cards'),
-        where('ownerUid', '==', user.uid),
-        where('platform', '==', 'text'),
-      ),
+      query(collection(db, 'cards'), where('ownerUid', '==', user.uid), where('platform', '==', 'text')),
     )
 
     const duplicate = textSnapshot.docs.find((item) => {
@@ -73,7 +71,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: '비슷한 텍스트가 이미 저장돼 있습니다.',
-          duplicate: { title: duplicateData.title, createdAt: duplicateData.createdAt },
+          duplicate: {
+            id: duplicateData.id,
+            title: duplicateData.title,
+            createdAt: duplicateData.createdAt,
+            folderIds: duplicateData.folderIds ?? [],
+          },
         },
         { status: 409 },
       )
@@ -110,7 +113,7 @@ export async function POST(req: NextRequest) {
   analyzeCard({
     id,
     url: isUrl ? url : undefined,
-    rawText,
+    rawText: isText ? rawText : undefined,
     platform,
   }).catch(console.error)
 

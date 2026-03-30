@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "reanalyze:cards": "node scripts/reanalyze-existing-cards.mjs"
+    "reanalyze:cards": "node scripts/reanalyze-existing-cards.mjs",
+    "build:extension": "node scripts/build-extension.mjs"
   },
   "dependencies": {
     "cheerio": "^1.2.0",
@@ -26,6 +27,7 @@
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.27",
+    "esbuild": "^0.25.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "postcss": "^8.5.8",

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Icon from '@/components/Icon'
 import { apiFetch } from '@/lib/apiClient'
+import { buildInstagramStoryCaption, exportInstagramStory } from '@/lib/exportInstagramStory'
 import { buildSharePath, isValidShareSlug, normalizeShareSlug } from '@/lib/shareSlug'
 import { ContentCard as CardType, CurationFolder } from '@/types'
 
@@ -39,6 +40,7 @@ export default function FolderExportDialog({
   const [feedback, setFeedback] = useState('')
   const [error, setError] = useState('')
   const [origin, setOrigin] = useState('')
+  const [instaLoading, setInstaLoading] = useState(false)
 
   const isOwner = !!folder && !!currentUserUid && (!folder.ownerUid || folder.ownerUid === currentUserUid)
   const canEdit = !!folder && isOwner
@@ -77,6 +79,7 @@ export default function FolderExportDialog({
     setSaving(false)
     setFeedback('')
     setError('')
+    setInstaLoading(false)
   }, [folder, isOpen])
 
   useEffect(() => {
@@ -84,7 +87,7 @@ export default function FolderExportDialog({
 
     const timeoutId = window.setTimeout(() => {
       setFeedback('')
-    }, 2200)
+    }, 2400)
 
     return () => window.clearTimeout(timeoutId)
   }, [feedback])
@@ -92,10 +95,10 @@ export default function FolderExportDialog({
   if (!isOpen || !folder) return null
 
   async function handleSave() {
-    if (!canEdit) return
+    if (!folder || !canEdit) return
 
     if (!isValidShareSlug(normalizedShareSlug)) {
-      setError('링크 주소는 3자 이상 50자 이하로, 한글과 영문 소문자, 숫자, 하이픈만 사용할 수 있어요.')
+      setError('링크 주소는 3자 이상 50자 이하로, 한글·영문·숫자·하이픈만 사용할 수 있어요.')
       return
     }
 
@@ -117,7 +120,7 @@ export default function FolderExportDialog({
       const result = await response.json()
 
       if (!response.ok) {
-        setError(result.error ?? '내보내기 설정을 저장하지 못했어요.')
+        setError(result.error ?? '공개 설정을 저장하지 못했어요.')
         return
       }
 
@@ -139,11 +142,58 @@ export default function FolderExportDialog({
     }
   }
 
+  async function handleCopyInstagramCaption() {
+    if (!folder) return
+
+    if (!previewUrl || !isPublic) {
+      setError('인스타 내보내기를 하려면 먼저 공개 링크를 만들어 주세요.')
+      return
+    }
+
+    try {
+      const caption = buildInstagramStoryCaption({
+        folder,
+        cards,
+        shareUrl: previewUrl,
+      })
+      await navigator.clipboard.writeText(caption)
+      setFeedback('인스타 캡션을 복사했어요.')
+    } catch {
+      setError('인스타 캡션을 복사하지 못했어요.')
+    }
+  }
+
+  async function handleExportInstagramStory() {
+    if (!folder) return
+
+    if (!previewUrl || !isPublic) {
+      setError('인스타 스토리로 내보내려면 먼저 공개 링크를 저장해 주세요.')
+      return
+    }
+
+    setInstaLoading(true)
+    setError('')
+
+    try {
+      await exportInstagramStory({
+        folder,
+        cards,
+        shareUrl: previewUrl,
+      })
+      setFeedback('인스타 스토리 이미지를 저장했어요. 캡션과 링크도 함께 복사해 보세요.')
+    } catch (nextError) {
+      console.error('[instagram-story] export failed:', nextError)
+      setError('인스타 스토리 이미지를 만들지 못했어요. 다시 시도해 주세요.')
+    } finally {
+      setInstaLoading(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-xl rounded-t-3xl bg-surface-container-lowest p-6 shadow-2xl sm:rounded-3xl">
+      <div className="relative w-full max-w-2xl rounded-t-3xl bg-surface-container-lowest p-6 shadow-2xl sm:rounded-3xl">
         <button
           type="button"
           onClick={onClose}
@@ -157,7 +207,7 @@ export default function FolderExportDialog({
           <p className="type-micro mb-2 font-semibold text-secondary">컬렉션 내보내기</p>
           <h2 className="font-headline text-[1.35rem] leading-[1.35] text-primary">{folder.name}</h2>
           <p className="type-body mt-2 text-on-surface-variant">
-            공개 링크를 만들고, 이후에는 메일 구독과 팔로우 반응까지 함께 볼 수 있어요.
+            공개 링크를 만들고, 인스타 스토리 이미지와 캡션까지 한 번에 준비할 수 있어요.
           </p>
         </div>
 
@@ -167,7 +217,7 @@ export default function FolderExportDialog({
               <div>
                 <p className="type-body font-semibold text-primary">공개 상태</p>
                 <p className="type-micro mt-1 text-on-surface-variant">
-                  비공개로 전환하면 기존 링크로는 더 이상 열리지 않아요.
+                  비공개로 바꾸면 기존 링크는 더 이상 열리지 않아요.
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -202,7 +252,7 @@ export default function FolderExportDialog({
           <div className="rounded-2xl border border-outline-variant/20 bg-surface p-4">
             <p className="type-body font-semibold text-primary">공개 링크</p>
             <p className="type-micro mt-1 text-on-surface-variant">
-              주소는 한글, 영문 소문자, 숫자, 하이픈만 사용할 수 있어요.
+              한글, 영문, 숫자, 하이픈만 사용할 수 있어요.
             </p>
 
             <div className="mt-3 rounded-2xl border border-outline-variant/20 bg-surface-container-lowest px-4 py-3">
@@ -211,13 +261,13 @@ export default function FolderExportDialog({
                 <input
                   type="text"
                   value={shareSlug}
-                  onChange={(e) => {
-                    setShareSlug(normalizeShareSlug(e.target.value))
+                  onChange={(event) => {
+                    setShareSlug(normalizeShareSlug(event.target.value))
                     setError('')
                   }}
                   disabled={!canEdit}
                   maxLength={50}
-                  placeholder="내-컬렉션"
+                  placeholder="컬렉션 주소"
                   className="type-body min-w-0 flex-1 bg-transparent text-on-surface outline-none placeholder:text-outline disabled:cursor-not-allowed"
                 />
               </div>
@@ -237,6 +287,50 @@ export default function FolderExportDialog({
                   {previewUrl}
                 </a>
               </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-outline-variant/20 bg-surface p-4">
+            <div className="mb-4">
+              <p className="type-body font-semibold text-primary">인스타 스토리로 내보내기</p>
+              <p className="type-micro mt-1 text-on-surface-variant">
+                1080x1920 스토리 이미지 1장과 함께 캡션, 공개 링크를 바로 복사할 수 있어요.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <button
+                type="button"
+                onClick={handleExportInstagramStory}
+                disabled={instaLoading}
+                className="type-body inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Icon name="download" className="h-4 w-4" />
+                {instaLoading ? '스토리 생성 중...' : '스토리 PNG 저장'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyInstagramCaption}
+                className="type-body rounded-full border border-outline-variant/20 px-4 py-3 font-semibold text-on-surface transition-colors hover:bg-surface-container"
+              >
+                캡션 복사
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopy}
+                disabled={!isPublic || !previewUrl}
+                className="type-body rounded-full border border-outline-variant/20 px-4 py-3 font-semibold text-on-surface transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                링크 복사
+              </button>
+            </div>
+
+            {!isPublic && (
+              <p className="type-micro mt-3 font-semibold text-[#7A5A11]">
+                인스타 내보내기를 하려면 먼저 이 컬렉션을 공개로 전환해 주세요.
+              </p>
             )}
           </div>
 
@@ -273,7 +367,7 @@ export default function FolderExportDialog({
               <div>
                 <p className="type-body font-semibold text-primary">공개 반응</p>
                 <p className="type-micro mt-1 text-on-surface-variant">
-                  링크 유입과 구독 반응을 함께 보면 컬렉션 운영 흐름이 더 잘 보입니다.
+                  링크 유입과 구독 반응을 함께 보면 컬렉션 운영 흐름이 보여요.
                 </p>
               </div>
               {folder.isPublic && (
@@ -330,7 +424,7 @@ export default function FolderExportDialog({
             ) : (
               <div className="mt-4 rounded-2xl bg-surface-container-low px-4 py-4">
                 <p className="type-body text-on-surface-variant">
-                  아직 집계가 없어요. 공개 링크를 공유하면 방문 수와 체류 시간, 많이 본 콘텐츠가 함께 쌓입니다.
+                  아직 집계가 없어요. 공개 링크를 공유하면 방문 수와 체류 시간, 많이 본 콘텐츠가 여기에 쌓입니다.
                 </p>
               </div>
             )}

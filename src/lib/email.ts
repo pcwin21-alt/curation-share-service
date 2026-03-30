@@ -8,6 +8,8 @@ export interface WeeklyDigestEmailOptions {
   shareUrl: string
   addedCardTitles: string[]
   unsubscribeUrl: string
+  digestOverview?: string
+  digestBullets?: string[]
 }
 
 export function buildVerificationEmail({
@@ -20,7 +22,7 @@ export function buildVerificationEmail({
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f1a17;">
         <h2 style="margin-bottom: 12px;">${collectionName} 업데이트를 받아보시겠어요?</h2>
-        <p>아래 버튼을 눌러 구독을 확인하면, 컬렉션에 새 콘텐츠가 추가될 때 주간 요약 메일을 받게 됩니다.</p>
+        <p>아래 버튼을 누르면 구독이 완료되고, 새 콘텐츠가 쌓일 때 주간 요약 메일을 받아볼 수 있습니다.</p>
         <p style="margin: 24px 0;">
           <a href="${confirmUrl}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#1f1a17;color:#fff;text-decoration:none;font-weight:600;">
             구독 확인하기
@@ -37,17 +39,35 @@ export function buildWeeklyDigestEmail({
   shareUrl,
   addedCardTitles,
   unsubscribeUrl,
+  digestOverview,
+  digestBullets,
 }: WeeklyDigestEmailOptions) {
   const listHtml = addedCardTitles.map((title) => `<li style="margin-bottom:8px;">${title}</li>`).join('')
   const listText = addedCardTitles.map((title) => `- ${title}`).join('\n')
+  const bulletHtml = (digestBullets ?? []).map((bullet) => `<li style="margin-bottom:8px;">${bullet}</li>`).join('')
+  const bulletText = (digestBullets ?? []).map((bullet) => `- ${bullet}`).join('\n')
 
   return {
-    subject: `[curatio] ${collectionName}에 이번 주 새 콘텐츠가 추가됐어요`,
-    text: `${collectionName} 컬렉션에 새 콘텐츠가 추가됐습니다.\n\n${listText}\n\n컬렉션 보기: ${shareUrl}\n구독 해지: ${unsubscribeUrl}`,
+    subject: `[curatio] ${collectionName}에 이번 주 업데이트가 도착했어요`,
+    text: `${collectionName} 컬렉션에 새 콘텐츠가 추가됐습니다.\n\n${
+      digestOverview ? `${digestOverview}\n\n` : ''
+    }${bulletText ? `${bulletText}\n\n` : ''}${listText}\n\n컬렉션 보기: ${shareUrl}\n구독 해지: ${unsubscribeUrl}`,
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f1a17;">
-        <h2 style="margin-bottom: 12px;">${collectionName}에 새 콘텐츠가 들어왔어요</h2>
-        <p>이번 주에 추가된 콘텐츠를 한 번에 확인해 보세요.</p>
+        <h2 style="margin-bottom: 12px;">${collectionName}에 새 콘텐츠가 쌓였어요</h2>
+        ${
+          digestOverview
+            ? `<p style="margin-bottom:16px;color:#4d5c52;">${digestOverview}</p>`
+            : '<p>이번 주에 추가된 콘텐츠를 한 번에 확인해 보세요.</p>'
+        }
+        ${
+          bulletHtml
+            ? `<div style="margin: 20px 0; padding: 14px 16px; border-radius: 16px; background: #f6edd8;">
+                <strong style="display:block;margin-bottom:10px;">이번 주 핵심 요약</strong>
+                <ul style="padding-left: 20px; margin: 0;">${bulletHtml}</ul>
+              </div>`
+            : ''
+        }
         <ul style="padding-left: 20px;">${listHtml}</ul>
         <p style="margin: 24px 0;">
           <a href="${shareUrl}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#1f1a17;color:#fff;text-decoration:none;font-weight:600;">

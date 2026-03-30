@@ -49,6 +49,8 @@ async function handleDigest(req: NextRequest) {
         shareUrl,
         addedCardTitles: event.addedCardTitles.slice(0, 8),
         unsubscribeUrl,
+        digestOverview: event.digestOverview,
+        digestBullets: event.digestBullets,
       })
 
       await updateDoc(doc(db, 'folders', event.folderId, 'emailSubscribers', subscriber.id), {
@@ -69,6 +71,8 @@ async function handleDigest(req: NextRequest) {
           shareUrl,
           addedCardTitles: event.addedCardTitles.slice(0, 8),
           unsubscribeUrl,
+          digestOverview: event.digestOverview,
+          digestBullets: event.digestBullets,
         },
         status: 'pending',
         createdAt: Date.now(),
