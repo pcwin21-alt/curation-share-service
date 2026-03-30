@@ -28,7 +28,7 @@ function formatTime(ts: number) {
 }
 
 export default function WorkspacePage() {
-  const { user, profile, loading: authLoading, authError, clearAuthError, signInWithGoogle, signOut } = useAuth()
+  const { user, profile, loading: authLoading, isSigningIn, authError, clearAuthError, signInWithGoogle, signOut } = useAuth()
   const unreadCount = useUnreadNotificationsCount(featureFlags.updates ? user?.uid : undefined)
   const [latestId, setLatestId] = useState<string | undefined>()
   const [folders, setFolders] = useState<CurationFolder[]>([])
@@ -196,9 +196,10 @@ export default function WorkspacePage() {
                     clearAuthError()
                     void signInWithGoogle().catch(() => {})
                   }}
+                  disabled={isSigningIn}
                   className="type-body rounded-full bg-primary px-5 py-3 font-semibold text-on-primary transition-opacity hover:opacity-90"
                 >
-                  Google로 시작하기
+                  {isSigningIn ? '로그인 여는 중...' : 'Google로 시작하기'}
                 </button>
                 <Link
                   href="/"

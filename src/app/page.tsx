@@ -46,7 +46,7 @@ const workflowSteps = [
 
 export default function LandingPage() {
   const router = useRouter()
-  const { user, loading, authError, clearAuthError, signInWithGoogle } = useAuth()
+  const { user, loading, isSigningIn, authError, clearAuthError, signInWithGoogle } = useAuth()
 
   async function handleStart() {
     try {
@@ -91,14 +91,14 @@ export default function LandingPage() {
             >
               작업 공간
             </Link>
-            <button
-              type="button"
-              onClick={handleStart}
-              disabled={loading}
-              className="type-body rounded-full bg-primary px-4 py-2 font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-40"
-            >
-              {user ? '바로 시작' : '로그인 후 시작'}
-            </button>
+              <button
+                type="button"
+                onClick={handleStart}
+                disabled={loading || isSigningIn}
+                className="type-body rounded-full bg-primary px-4 py-2 font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-40"
+              >
+              {user ? '바로 시작' : isSigningIn ? '로그인 여는 중...' : '로그인 후 시작'}
+              </button>
           </div>
         </div>
       </header>
@@ -130,10 +130,10 @@ export default function LandingPage() {
               <button
                 type="button"
                 onClick={handleStart}
-                disabled={loading}
+                disabled={loading || isSigningIn}
                 className="rounded-full bg-primary px-6 py-3.5 text-[1rem] font-semibold tracking-[-0.02em] text-on-primary transition-opacity hover:opacity-90 disabled:opacity-40"
               >
-                {user ? '내 작업 공간 열기' : 'Google로 시작하기'}
+                {user ? '내 작업 공간 열기' : isSigningIn ? '로그인 여는 중...' : 'Google로 시작하기'}
               </button>
               <a
                 href="#workflow"
@@ -347,10 +347,10 @@ export default function LandingPage() {
               <button
                 type="button"
                 onClick={handleStart}
-                disabled={loading}
+                disabled={loading || isSigningIn}
                 className="type-body rounded-full bg-white px-6 py-3 font-semibold text-primary transition-opacity hover:opacity-90 disabled:opacity-40"
               >
-                {user ? '내 작업 공간으로' : '지금 시작하기'}
+                {user ? '내 작업 공간으로' : isSigningIn ? '로그인 여는 중...' : '지금 시작하기'}
               </button>
               <Link
                 href="/workspace"

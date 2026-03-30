@@ -45,7 +45,7 @@ function getVisitorId() {
 export default function PublicFolderPage() {
   const { slug } = useParams<{ slug: string }>()
   const searchParams = useSearchParams()
-  const { user, signInWithGoogle } = useAuth()
+  const { user, isSigningIn, signInWithGoogle } = useAuth()
   const [folder, setFolder] = useState<CurationFolder | null>(null)
   const [cards, setCards] = useState<CardType[]>([])
   const [loading, setLoading] = useState(true)
@@ -369,7 +369,7 @@ export default function PublicFolderPage() {
             {featureFlags.follows && <button
               type="button"
               onClick={handleToggleFollow}
-              disabled={followLoading}
+              disabled={followLoading || isSigningIn}
               className="type-body rounded-full border border-outline-variant/30 px-4 py-2 font-semibold text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-40"
             >
               {user ? (isFollowing ? '팔로잉 중' : '팔로우') : '로그인 후 팔로우'}

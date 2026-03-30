@@ -1,10 +1,11 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   User,
 } from 'firebase/auth'
@@ -23,6 +24,7 @@ interface AuthContextValue {
   user: User | null
   profile: UserProfile | null
   loading: boolean
+  isSigningIn: boolean
   authError: string
   clearAuthError: () => void
   signInWithGoogle: () => Promise<void>
@@ -32,47 +34,78 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+function getFirebaseErrorCode(error: unknown) {
+  return typeof error === 'object' && error && 'code' in error ? String(error.code) : ''
+}
+
+function describeAuthError(error: unknown) {
+  const code = getFirebaseErrorCode(error)
+
+  switch (code) {
+    case 'auth/unauthorized-domain':
+      return 'Firebase Authorized domains에 현재 배포 도메인이 빠져 있습니다.'
+    case 'auth/operation-not-allowed':
+      return 'Firebase에서 Google 로그인이 아직 활성화되지 않았습니다.'
+    case 'auth/popup-blocked':
+      return '브라우저가 로그인 팝업을 막았습니다. 리디렉션 로그인으로 전환합니다.'
+    case 'auth/popup-closed-by-user':
+      return '로그인 팝업이 중간에 닫혔습니다. 다시 시도해 주세요.'
+    case 'auth/cancelled-popup-request':
+      return '로그인 요청이 여러 번 겹쳤습니다. 한 번만 다시 시도해 주세요.'
+    case 'auth/network-request-failed':
+      return '네트워크 문제로 Google 로그인에 실패했습니다.'
+    default:
+      return code ? `Google 로그인에 실패했습니다. (${code})` : 'Google 로그인에 실패했습니다.'
+  }
+}
+
+function waitForSignedInUser(timeoutMs = 1800) {
+  if (!auth) return Promise.resolve<User | null>(null)
+  const authInstance = auth
+  if (authInstance.currentUser) return Promise.resolve(authInstance.currentUser)
+
+  return new Promise<User | null>((resolve) => {
+    const timeoutId = window.setTimeout(() => {
+      unsubscribe()
+      resolve(authInstance.currentUser)
+    }, timeoutMs)
+
+    const unsubscribe = onAuthStateChanged(authInstance, (nextUser) => {
+      if (!nextUser) return
+      window.clearTimeout(timeoutId)
+      unsubscribe()
+      resolve(nextUser)
+    })
+  })
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isSigningIn, setIsSigningIn] = useState(false)
   const [authError, setAuthError] = useState('')
+  const signInPromiseRef = useRef<Promise<void> | null>(null)
 
-  function describeAuthError(error: unknown) {
-    const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : ''
-
-    switch (code) {
-      case 'auth/unauthorized-domain':
-        return 'Firebase Authorized domains에 현재 배포 도메인이 빠져 있습니다.'
-      case 'auth/operation-not-allowed':
-        return 'Firebase에서 Google 로그인이 아직 활성화되지 않았습니다.'
-      case 'auth/popup-blocked':
-        return '브라우저가 로그인 팝업을 차단했습니다.'
-      case 'auth/popup-closed-by-user':
-        return '로그인 팝업이 닫혀서 인증이 중단되었습니다.'
-      case 'auth/cancelled-popup-request':
-        return '이전 로그인 팝업 요청이 취소되었습니다. 다시 시도해 주세요.'
-      default:
-        return code ? `Google 로그인에 실패했습니다. (${code})` : 'Google 로그인에 실패했습니다.'
-    }
-  }
-
-  async function loadProfile(u: User) {
-    const ref = doc(db, 'users', u.uid)
+  async function loadProfile(nextUser: User) {
+    const ref = doc(db, 'users', nextUser.uid)
     const snap = await getDoc(ref)
+
     if (snap.exists()) {
       setProfile(snap.data() as UserProfile)
-    } else {
-      const newProfile: UserProfile = {
-        uid: u.uid,
-        email: u.email ?? '',
-        nickname: u.displayName ?? u.email?.split('@')[0] ?? '사용자',
-        createdAt: Date.now(),
-        ...(u.photoURL ? { photoURL: u.photoURL } : {}),
-      }
-      await setDoc(ref, newProfile)
-      setProfile(newProfile)
+      return
     }
+
+    const newProfile: UserProfile = {
+      uid: nextUser.uid,
+      email: nextUser.email ?? '',
+      nickname: nextUser.displayName ?? nextUser.email?.split('@')[0] ?? '사용자',
+      createdAt: Date.now(),
+      ...(nextUser.photoURL ? { photoURL: nextUser.photoURL } : {}),
+    }
+
+    await setDoc(ref, newProfile)
+    setProfile(newProfile)
   }
 
   useEffect(() => {
@@ -81,13 +114,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      setUser(u)
+    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+      setUser(nextUser)
 
       try {
-        if (u) {
+        if (nextUser) {
           setAuthError('')
-          await loadProfile(u)
+          await loadProfile(nextUser)
         } else {
           setProfile(null)
         }
@@ -98,23 +131,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false)
       }
     })
-    return unsub
+
+    return unsubscribe
   }, [])
 
   async function signInWithGoogle() {
-    if (!auth) throw new Error('Firebase 인증 설정이 아직 준비되지 않았습니다.')
+    if (!auth) {
+      throw new Error('Firebase 인증 설정이 아직 준비되지 않았습니다.')
+    }
+
+    if (signInPromiseRef.current) {
+      return signInPromiseRef.current
+    }
 
     const provider = new GoogleAuthProvider()
     provider.setCustomParameters({ prompt: 'select_account' })
 
-    try {
+    const signInPromise = (async () => {
       setAuthError('')
-      await signInWithPopup(auth, provider)
-    } catch (error) {
-      console.error('[auth] Google sign-in failed:', error)
-      setAuthError(describeAuthError(error))
-      throw error
-    }
+      setIsSigningIn(true)
+
+      try {
+        await signInWithPopup(auth, provider)
+      } catch (error) {
+        const code = getFirebaseErrorCode(error)
+
+        if (code === 'auth/popup-blocked') {
+          setAuthError(describeAuthError(error))
+          await signInWithRedirect(auth, provider)
+          return
+        }
+
+        if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+          const settledUser = await waitForSignedInUser()
+          if (settledUser) return
+        }
+
+        console.error('[auth] Google sign-in failed:', error)
+        setAuthError(describeAuthError(error))
+        throw error
+      } finally {
+        setIsSigningIn(false)
+        signInPromiseRef.current = null
+      }
+    })()
+
+    signInPromiseRef.current = signInPromise
+    return signInPromise
   }
 
   async function signOut() {
@@ -123,7 +186,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function refreshProfile() {
-    if (user) await loadProfile(user)
+    if (user) {
+      await loadProfile(user)
+    }
   }
 
   return (
@@ -132,6 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         profile,
         loading,
+        isSigningIn,
         authError,
         clearAuthError: () => setAuthError(''),
         signInWithGoogle,
@@ -145,7 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
+  const context = useContext(AuthContext)
+  if (!context) throw new Error('useAuth must be used within AuthProvider')
+  return context
 }
