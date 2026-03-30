@@ -16,9 +16,11 @@ This project must keep Google login stable across local, preview, and production
    - Chrome extension origin when extension auth is used
 5. All web sign-in buttons must call the centralized `signInWithGoogle()` helper from `AuthContext`.
    Do not call `signInWithPopup()` directly from regular page components.
-6. Never allow concurrent popup requests.
+6. Production web login should prefer `signInWithRedirect()`.
+   Popup login is only a local-development convenience.
+7. Never allow concurrent popup requests.
    UI buttons must disable while `isSigningIn` is true.
-7. If popup auth is blocked, fall back to redirect auth rather than silently failing.
+8. If popup auth is blocked, fall back to redirect auth rather than silently failing.
 
 ## Symptoms and the most likely cause
 
@@ -26,6 +28,9 @@ This project must keep Google login stable across local, preview, and production
   - duplicate popup requests
   - unauthorized domain
   - popup blocked by browser
+- Production redirect login loops or fails:
+  - wrong `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+  - deployed hostname missing from Firebase Authorized domains
 - Popup opens, closes, and user stays logged out:
   - `signInWithPopup()` failed before auth state settled
 - Login succeeds but profile fails:

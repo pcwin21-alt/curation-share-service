@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import {
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
@@ -59,6 +60,13 @@ function describeAuthError(error: unknown) {
   }
 }
 
+function shouldUseRedirectLogin() {
+  if (typeof window === 'undefined') return false
+
+  const host = window.location.hostname
+  return host !== 'localhost' && host !== '127.0.0.1'
+}
+
 function waitForSignedInUser(timeoutMs = 1800) {
   if (!auth) return Promise.resolve<User | null>(null)
   const authInstance = auth
@@ -114,6 +122,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    void getRedirectResult(auth).catch((error) => {
+      console.error('[auth] redirect result failed:', error)
+      setAuthError(describeAuthError(error))
+    })
+
     const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
       setUser(nextUser)
 
@@ -152,6 +165,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsSigningIn(true)
 
       try {
+        if (shouldUseRedirectLogin()) {
+          await signInWithRedirect(auth, provider)
+          return
+        }
+
         await signInWithPopup(auth, provider)
       } catch (error) {
         const code = getFirebaseErrorCode(error)
