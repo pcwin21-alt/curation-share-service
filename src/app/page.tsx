@@ -46,14 +46,20 @@ const workflowSteps = [
 
 export default function LandingPage() {
   const router = useRouter()
-  const { user, loading, signInWithGoogle } = useAuth()
+  const { user, loading, authError, clearAuthError, signInWithGoogle } = useAuth()
 
   async function handleStart() {
-    if (!user) {
-      await signInWithGoogle()
-    }
+    try {
+      clearAuthError()
 
-    router.push('/workspace')
+      if (!user) {
+        await signInWithGoogle()
+      }
+
+      router.push('/workspace')
+    } catch {
+      return
+    }
   }
 
   return (
@@ -136,6 +142,8 @@ export default function LandingPage() {
                 어떻게 쓰는지 보기
               </a>
             </div>
+
+            {authError && <p className="type-micro mt-3 text-error">{authError}</p>}
 
             <div className="mt-10 flex flex-wrap gap-3">
               <div className="rounded-2xl bg-surface px-5 py-4">

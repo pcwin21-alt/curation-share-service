@@ -67,8 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         uid: u.uid,
         email: u.email ?? '',
         nickname: u.displayName ?? u.email?.split('@')[0] ?? '사용자',
-        photoURL: u.photoURL ?? undefined,
         createdAt: Date.now(),
+        ...(u.photoURL ? { photoURL: u.photoURL } : {}),
       }
       await setDoc(ref, newProfile)
       setProfile(newProfile)
@@ -83,13 +83,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u)
-      if (u) {
-        setAuthError('')
-        await loadProfile(u)
-      } else {
-        setProfile(null)
+
+      try {
+        if (u) {
+          setAuthError('')
+          await loadProfile(u)
+        } else {
+          setProfile(null)
+        }
+      } catch (error) {
+        console.error('[auth] Failed to load profile:', error)
+        setAuthError('로그인은 되었지만 프로필을 불러오는 중 문제가 생겼습니다.')
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     })
     return unsub
   }, [])
